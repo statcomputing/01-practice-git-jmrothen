@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ## Find commit that has introduced bug
 Your customer claims that there is a bug in application. The word *jackass* is being displayed on main screen.
 
@@ -30,3 +31,11 @@ find a commit introducing bug dramatically.
  * When you find the first commit with *jackass*, you can push it for verification with the following command
  
         git push origin COMMIT_ID:find-bug
+=======
+## Push a commit you have made
+
+The first exercise is to push a commit that is created when you run the `git start` command.
+
+Just try `git verify` after you have initialized the exercises and be proud of passing the first one :-)
+
+>>>>>>> 47d5549b6f14accdeec561b902274bf8543edcca
