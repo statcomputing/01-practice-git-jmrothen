@@ -1,0 +1,279 @@
+---
+title: "HW4"
+author: "John Rothen"
+date: "9/26/2020"
+output: pdf_document
+---
+
+
+
+
+
+# Homework 4
+
+## 3.5.1
+
+### 1
+
+$f(x;t) = 1/(pi(1+(x-t)^2)$ -> L(t) = product(f(x;t)) = $pi^{-n} - Product_{i}^{n}(1+(t-x)^2)$. Thus, log(L(t))= l(t) = $-nln(pi) - Sum(ln(1 +(t-x)^2))$. To obtain the first derivative, the -nln(pi) is removed as it equals =0, and ln(1 +(t-x)^2) -> (t-x)/(1+ (t-x)^2) via the power and chain rules. This can be done again to obtain the second derivative. The information can then be found be evaluating $I(t) = -E(l"(t)|t). 
+
+```{r, include=FALSE}
+options(digits=20)
+```
+
+### 2
+
+```{r}
+set.seed(909)
+
+sampl<-rcauchy(10,location=5, scale=1) #scale is 1 for this problem
+
+
+loglikCauchy <- function(x,theta, n=10){
+  #x is a vector of values 
+  part <- sum(log(1+(theta - x)^2))
+  -n*log(pi) - part
+}
+theta.set <- seq(0.5,10, by=.5)
+y <- rep(0,20)
+
+for(i in 1:20){
+  y[i] <- loglikCauchy(sampl, i/2)
+}
+theta.set <- c(theta.set)
+plot(theta.set, y, xlab= "Theta", ylab = "Log Likelihood", main= "Theta versus LogLikelihood")
+```
+
+### 3
+
+```{r warning=FALSE}
+#loglik function
+loglikCauchy <- function(x){
+  part <- sum(log(1+(x - sampl)^2))
+  -10*log(pi) - part
+}
+#first derivative of loglik
+l2.c <- function(t){
+  -2*sum( (t-sampl)/ (1 + (t -sampl) ^2) )
+}
+
+#root via newton-taphson
+uniroot(l2.c, c(-10,30))
+```
+
+It appears that the MLE of theta is about 5.5.
+
+### 4
+
+To improve the process, we can attempt to use M = loglikelihood's second derivative for the function $x_{t+1} = x_{t} - M^{-1}_{t}l'(x)$. 
+
+```{r}
+# second derivative of loglik
+l3 <- function(x){
+  -2*sum( ( (1 -(x-sampl)^2) / ((1+(x-sampl)^2)^2)))
+}
+
+#process
+x=-10
+for(i in 1:1000){
+  x <- x + (l2.c(x))/(l3(x))
+}
+x
+
+
+```
+
+The results for this method do seem rather accurate, as it estimate the MLE to be close to the initial theta, although it is not the max in the graph shown before. 
+
+### 5
+
+The results of a univariate fixed-point iteration are shown below.
+
+```{r}
+#Univariate Options
+g1 <-function(t){
+  1*l2.c(t) + t
+}
+g2 <-function(t){
+  .64*l2.c(t) + t
+}
+g3 <-function(t){
+  .25*l2.c(t) + t
+}
+
+#a=1
+t=5
+for(i in 1:100){
+   t<-g1(t)
+}
+t
+
+#a=.64
+t=5
+for(i in 1:100){
+   t<-g2(t)
+}
+t
+
+#a=.25
+t=5
+for(i in 1:100){
+   t<-g3(t)
+}
+t
+```
+
+The iterative methods seem efficient at alpha=1, and alpha=.25, as both appear to converge to the true MLE for theta. For alpha=.64, it appears that the iteration is not convergent to the MLE.
+
+For a fixed-point Newton-Raphson method, one can use M = loglikelihood's second derivative of a good guess of the MLE (or the initial value), such as M = l''(5). The results are given below.
+
+```{r}
+x=-10
+M = l3(5)
+for(i in 1:100){
+  x <- x - (l2.c(x))/M
+}
+x
+```
+
+This method provides an accurate estimate of the MLE, as seen in the earlier evaluations.
+
+### 6
+
+To use Fisher Scoring, we will use the form M = $I_{n}$ = n/2
+
+
+```{r warning=FALSE}
+#MLE via fisher scoring
+x=-10
+M= -(10/2)
+for(i in 1:100){
+  x <- x - (l2.c(x))/M
+}
+x
+
+
+#MLE further refined via Newton-Raphson without hessian using M=l''(x)
+for(i in 1:100){
+  x <- x- (l2.c(x))/(l3(x))
+}
+x
+```
+
+The final estimate is `r x`
+
+### 7
+
+Many of the methods used above find similar results. For accuracy, the Fisher scoring followed by Newton-Raphson refining is likely the best, as it refined the estimate via two methods. This method takes the longest though, as it takes the evaluation of the information. The multivariate fixed-point iteration method appeared to be the easiest method to perform, as it only required a rough estimate of the MLE to provide a very accurate estimate (virtually the same as is seen in the Fisher scoring version).
+
+It is also worth noting that the method used in part 4 of this question provided the result closest to 5 (the original parameter used). 
+
+
+## 3.5.2
+
+```{r}
+x <- c(3.91, 4.85, 2.28, 4.06, 3.70, 4.04, 5.46, 3.53, 2.28, 1.96,2.53, 3.88, 2.22, 3.47, 4.82, 2.46, 2.99, 2.54, 0.52)
+n = length(x)
+fn <- function(t){
+  (1-cos(x-t))/(2*pi)
+}
+
+```
+
+### 1
+
+The likelihood function would be $ L(t) = Product_{i}^{n}[1-cos(x-t)]/ (2pi)^n $. Taking the log of this gives us $l(t)= sum(log(1-cos(x-t))) -nln(2pi)$ 
+
+```{r}
+ll <-function(t){
+  sum(log( 1-cos(x-t))) - (n*log(2*pi))
+}
+set <- c(seq(-pi, pi, by=0.062831853071795862))
+lly <- rep(0,101)
+for(i in 1:101){
+  
+  lly[i] <- ll(set[i])
+}
+
+plot(set, lly, xlab = "Theta", ylab="Log-Likelihood", )
+```
+
+### 2
+
+Note: t is the short hand for theta. 
+
+$E(x|t) = integral(x*(1-cos(x-t))/(2pi))$ = $-x((2sin(x-t)-x) + 2cos(x-t))/4pi$ from 2pi to 0 = sin(t) + pi = Xbar. From here we can further say that sin(t) = xbar-pi, and then $theta^{hat}$ = arcsin(xbar-pi). Because we can calculate xbar from the sample, the MOM estimate of Theta is given as:
+
+```{r}
+xbar <- mean(x)
+t.mom = asin(xbar - pi)
+t.mom
+```
+
+Note: this value does appear to be close to the max likelihood theta from the graph in part 1.
+
+### 3
+
+```{r warning=FALSE}
+ll1 <-function(t){
+  sum(((sin(x-t)) / (1- cos(x-t))))
+}
+
+ll2 <- function(t){
+  sum( ( -(sin(x-t)^2) +(cos(x-t))^2 -(cos(x-t)))/((cos(x-t)-1)^2))
+}
+#newton-raphson with fixed point l''(tmom) by hand
+tnew <- t.mom
+for (i in 1:20){
+  tnew <- tnew - ((ll1(tnew))/ ll2(tnew))
+}
+tnew
+
+#using general optim
+optim(t.mom,ll)$par
+```
+
+The MLE appears to be around .52, and varies depending on methods.
+
+### 4
+
+```{r warning=FALSE}
+#at -2.7
+optim(-2.7, ll)$par
+#at 2.7
+optim(2.7,ll)$par
+```
+
+Both estimates are vastly different from the MLE estimate obtained in part 3. This is due to the existence of many local maximums. This can be seen on the graph, this time provided with verticals lines at both 2.7 and -2.7, which have local maximums closer to them then the ultimate maximum near t=0.1.
+
+```{r}
+plot(set, lly, xlab = "Theta", ylab="Log-Likelihood", )
+abline(v=2.7)
+abline(v=-2.7)
+```
+
+
+### 5
+
+The estimated zero for each given starting point is given in the following table as "output". These outputs were then placed into a group corresponding with the output, and placed within a group wih inputs that produced the same output. The levels (possible zeroes), are given in the output below, as well as the full print of each input/output and the correponding group they received. Group is numbered with 1 correponding to the lowest output (-2.814), and the next smallest being group 2, and so on.
+
+```{r warning=FALSE}
+range <- seq(-pi, pi, length.out= 200)
+range <- c(range)
+
+input <- range
+output<- rep(0,200)
+for(i in 1:200){
+  temp <- input[i]
+  output[i] <- optim(temp,ll)$par
+}
+dat <-cbind(input,output)
+dat <- as.data.frame(dat)
+options(digits=5)
+dat$round <- round(dat$output,digits=3)
+dat$group <- factor(dat$round)
+levels(dat$group)
+levels(dat$group) <- 1:23
+dat
+```
+
