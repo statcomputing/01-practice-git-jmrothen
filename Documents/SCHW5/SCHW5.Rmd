@@ -1,0 +1,148 @@
+---
+title: "HW5"
+author: "John Rothen"
+date: "10/3/2020"
+output: pdf_document
+---
+
+# Problem 3.5.4
+
+## Part 1
+
+For ease of typing, lambda is abbreviated L.
+
+$B_{j}^` = argmin{(.5(B_{j}^{LS} - B_{j})^2 + L||B_{j}||_{1}}.$ 
+
+For the case of  z> L,  $argmin(z^2 + Lambda(b))$, which is minimized at Bj, causing the result to be z- Lambda. as for the case of  z< -L, this is minimized to z + Lambda in a similar fashion. The case where lambda is greater than or equal to z causes the minimum to occur at zero. 
+
+## Part 2
+
+Consider the condition of the soft-thresholding operator $S(z;L) = 0$ if $|z| <= L$. This means, that Lmax would be the greatest Lambda such that $(L < |z|).$ 
+
+## Part 3
+
+
+```{r}
+soft.thr <- function(z,L){
+  #Lambda is given as L here for ease of use
+  if(z > L){out = z-L}
+  if(abs(z) <= L){out = 0}
+  if(z < (-1*L)){out = z+L}
+  out
+}
+```
+
+## Part 4
+
+```{r}
+pen_ls <- function(y,xmat,lambda){
+  n <- length(y) 
+  df <- as.data.frame(cbind(y,xmat)) #create dataframe
+  lm.temp <- lm(y~., data=df) #generate LM
+  betas <- lm.temp$coefficients[2:11] #obtain Beta LS
+  bhats <- rep(0,10) #prepare empty vector
+  for(i in 1:length(betas)){ 
+    bhats[i]<- soft.thr(betas[i], lambda) #calculate new estimates
+  }
+  bhats
+}
+```
+
+## Part 5
+
+```{r}
+#Data generation
+gen_data <- function(n, b, sigma = 1) {
+  p <- length(b)
+  x <- matrix(rnorm(n * p), n, p)
+  colnames(x) <- paste0("x", 1:p)
+  y <- c(x %*% b) + rnorm(n, sd = sigma)
+  return(data.frame(y, x))
+}
+
+n <- 200
+b <- c(1, -1, 2, rep(0, 7))
+set.seed(920)
+dat <- gen_data(n, b)
+
+#Test
+
+#recombine the x matrix
+xmat <- as.matrix(cbind(dat$x1,dat$x2,dat$x3,dat$x4,dat$x5,dat$x6,dat$x7,dat$x8,dat$x9,dat$x10))
+
+# relabel y for ease of use
+y <- dat$y
+
+#pick random small lambda
+lambda = .001
+
+#Test
+test<-pen_ls(y, xmat, lambda)
+# extract the original betas for reference
+n <- length(y) 
+df <- as.data.frame(cbind(y,xmat)) #create dataframe
+lm.temp <- lm(y~., data=df) #generate LM
+betas <- lm.temp$coefficients[2:11] #obtain Beta LS
+
+#present results
+data.frame(test,betas)
+```
+
+## Part 6
+
+Using the conclusion from part 2, we know that Lmax will be the largest number smaller than $|B_{i}^{LS}|$. The smallest beta here is beta5, `r betas[5]`. This means that Lambda must be less than `r abs(betas[5])`. We will let L max be this value minus .0000000001, (although to be more precise, one would choose Lmax to be `r abs(betas[5])` - smallest representable number in double).
+
+```{r}
+#Plot
+lmax = abs(betas[5])-.0000000001
+seq.l <- seq(0, lmax, length.out=100)
+t <- rep(0,100)
+
+
+
+for(i in 1:length(seq.l)){
+  temp <- seq.l[i]
+  t[i] <- pen_ls(y, xmat, temp)[1]
+}
+plot(seq.l, t, xlab = "Lambda", ylab= "Beta estimate", main= "Graph of Beta1's estimate as lambda changes")
+```
+
+```{r,echo=FALSE}
+for(i in 1:length(seq.l)){
+  temp <- seq.l[i]
+  t[i] <- pen_ls(y, xmat, temp)[2]
+}
+plot(seq.l, t, xlab = "Lambda", ylab= "Beta estimate", main= "Graph of Beta2's estimate as lambda changes")
+for(i in 1:length(seq.l)){
+  temp <- seq.l[i]
+  t[i] <- pen_ls(y, xmat, temp)[3]
+}
+plot(seq.l, t, xlab = "Lambda", ylab= "Beta estimate", main= "Graph of Beta3's estimate as lambda changes")
+for(i in 1:length(seq.l)){
+  temp <- seq.l[i]
+  t[i] <- pen_ls(y, xmat, temp)[4]
+}
+plot(seq.l, t, xlab = "Lambda", ylab= "Beta estimate", main= "Graph of Beta4's estimate as lambda changes")
+for(i in 1:length(seq.l)){
+  temp <- seq.l[i]
+  t[i] <- pen_ls(y, xmat, temp)[6]
+}
+plot(seq.l, t, xlab = "Lambda", ylab= "Beta estimate", main= "Graph of Beta6's estimate as lambda changes")
+for(i in 1:length(seq.l)){
+  temp <- seq.l[i]
+  t[i] <- pen_ls(y, xmat, temp)[7]
+}
+plot(seq.l, t, xlab = "Lambda", ylab= "Beta estimate", main= "Graph of Beta7's estimate as lambda changes")
+for(i in 1:length(seq.l)){
+  temp <- seq.l[i]
+  t[i] <- pen_ls(y, xmat, temp)[8]
+}
+plot(seq.l, t, xlab = "Lambda", ylab= "Beta estimate", main= "Graph of Beta8's estimate as lambda changes")
+
+for(i in 1:length(seq.l)){
+  temp <- seq.l[i]
+  t[i] <- pen_ls(y, xmat, temp)[9]
+}
+plot(seq.l, t, xlab = "Lambda", ylab= "Beta estimate", main= "Graph of Beta9's estimate as lambda changes")
+
+```
